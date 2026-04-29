@@ -20,7 +20,7 @@ Weed growing operation for Pulsar Framework with custom streamed prop models, gr
 
 ## License
 
-Copyright © 2024 Pulsar Framework. All rights reserved.
+Copyright © 2026 Pulsar Framework. All rights reserved.
 
 <div align="center">
 
