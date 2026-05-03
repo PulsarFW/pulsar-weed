@@ -24,7 +24,7 @@ function RegisterCallbacks()
 				if char ~= nil then
 					if _plants[pid] ~= nil then
 						if _plants[pid].plant.water < 100 then
-							if exports.ox_inventory:ItemsHas(char:GetData("SID"), 1, "water", 1) then
+							if exports.ox_inventory:ItemsHas(char:GetData("SID"), "water", 1) then
 								exports.ox_inventory:Remove(char:GetData("SID"), 1, "water", 1)
 								local amt = 10.0
 								if 100 - _plants[pid].plant.water < 10 then

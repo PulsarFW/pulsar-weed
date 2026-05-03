@@ -73,7 +73,7 @@ function RegisterItems()
 
 	exports.ox_inventory:RegisterUse("rolling_paper", "Weed", function(source, item)
 		local char = exports['pulsar-characters']:FetchCharacterSource(source)
-		if exports.ox_inventory:ItemsHas(char:GetData("SID"), 1, "weed_bud", 1) then
+		if exports.ox_inventory:ItemsHas(char:GetData("SID"), "weed_bud", 1) then
 			exports["pulsar-core"]:ClientCallback(source, "Weed:RollingAnim", {}, function(success)
 				if success then
 					exports.ox_inventory:RemoveList(
@@ -106,7 +106,7 @@ function RegisterItems()
 
 	exports.ox_inventory:RegisterUse("weed_brick", "Weed", function(source, item)
 		local char = exports['pulsar-characters']:FetchCharacterSource(source)
-		if exports.ox_inventory:ItemsHas(char:GetData("SID"), 1, "weed_brick", 1) then
+		if exports.ox_inventory:ItemsHas(char:GetData("SID"), "weed_brick", 1) then
 			exports["pulsar-core"]:ClientCallback(source, "Weed:MakingBrick", {
 				label = "Unpacking Brick",
 				time = 10,
@@ -124,7 +124,7 @@ function RegisterItems()
 
 	exports.ox_inventory:RegisterUse("weed_baggy", "Weed", function(source, item)
 		local char = exports['pulsar-characters']:FetchCharacterSource(source)
-		if exports.ox_inventory:ItemsHas(char:GetData("SID"), 1, "weed_baggy", 1) then
+		if exports.ox_inventory:ItemsHas(char:GetData("SID"), "weed_baggy", 1) then
 			exports["pulsar-core"]:ClientCallback(source, "Weed:MakingBrick", {
 				label = "Removing Bud",
 				time = 3,
