@@ -17,10 +17,9 @@ jobs:
 
       - name: Bundle files
         run: |
-          mkdir -p ./temp/pulsar-weed
-          cp ./{README.md,fxmanifest.lua} ./temp/pulsar-weed
-          cp -r ./{client,config,server,stream} ./temp/pulsar-weed
-          cd ./temp && zip -r ../pulsar-weed.zip ./pulsar-weed
+          mkdir -p staging/pulsar-weed
+          rsync -a --exclude='.github' --exclude='node_modules' --exclude='staging' . staging/pulsar-weed/
+          cd staging && zip -r ../pulsar-weed.zip pulsar-weed/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
