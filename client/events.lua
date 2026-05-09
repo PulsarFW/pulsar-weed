@@ -338,6 +338,31 @@ AddEventHandler("Weed:Client:Destroy", function(nId)
 	end)
 end)
 
+local _stonedVal    = 0
+local _stonedDecayId = 0
+
+RegisterNetEvent("Weed:Client:Stoned", function()
+	_stonedVal = math.min(_stonedVal + 7, 100)
+	exports['pulsar-hud']:ApplyBuff("stoned", _stonedVal)
+
+	_stonedDecayId = _stonedDecayId + 1
+	local myId = _stonedDecayId
+
+	CreateThread(function()
+		while _stonedVal > 0 and _stonedDecayId == myId do
+			Wait(90 * 1000)
+			if _stonedDecayId == myId then
+				_stonedVal = math.max(0, _stonedVal - 7)
+				if _stonedVal <= 0 then
+					exports['pulsar-hud']:RemoveBuff("stoned")
+				else
+					exports['pulsar-hud']:UpdateBuff("stoned", _stonedVal)
+				end
+			end
+		end
+	end)
+end)
+
 AddEventHandler("Weed:Client:PDDestroy", function(entity)
 	exports['pulsar-hud']:Progress({
 		name = "harvest_weed",

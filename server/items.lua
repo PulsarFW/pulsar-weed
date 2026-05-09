@@ -98,9 +98,9 @@ function RegisterItems()
 			for i = 0, count do
 				table.insert(stressTicks, "3")
 			end
-			--Player(source).state.armorTicks = { "2", "2", "2", "2", "2" }
-			--TriggerClientEvent("Damage:Client:Ticks:Armor", source)
 			Player(source).state.stressTicks = stressTicks
+
+			TriggerClientEvent("Weed:Client:Stoned", source)
 		end)
 	end)
 
