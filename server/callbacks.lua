@@ -131,7 +131,7 @@ function RegisterCallbacks()
 									t = 3
 								end
 
-								if exports.ox_inventory:AddItem(char:GetData("SID"), "weed_bud", t, {}, 1) then
+								if exports.ox_inventory:AddItem(source, "weed_bud", t, {}, 1) then
 									exports['pulsar-weed']:PlantingDelete(pid)
 									cb(true)
 								else
@@ -246,8 +246,8 @@ function RegisterCallbacks()
 					end
 
 					--exports['pulsar-characters']:RepAdd(source, "weed", 1000)
-					exports.ox_inventory:AddItem(char:GetData("SID"), giving, 2, {}, 1)
-					exports.ox_inventory:AddItem(char:GetData("SID"), giving2, 2, {}, 1)
+					exports.ox_inventory:AddItem(source, giving, 2, {}, 1)
+					exports.ox_inventory:AddItem(source, giving2, 2, {}, 1)
 				else
 					exports['pulsar-core']:LoggerInfo(
 						"Weed",

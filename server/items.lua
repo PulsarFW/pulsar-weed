@@ -81,7 +81,7 @@ function RegisterItems()
 						1,
 						{ { name = "rolling_paper", count = 1 }, { name = "weed_bud", count = 1 } }
 					)
-					exports.ox_inventory:AddItem(char:GetData("SID"), "weed_joint", 2, {}, 1)
+					exports.ox_inventory:AddItem(source, "weed_joint", 2, {}, 1)
 				end
 			end)
 		else
@@ -114,7 +114,7 @@ function RegisterItems()
 				if success then
 					exports.ox_inventory:RemoveList(char:GetData("SID"), 1,
 						{ { name = "weed_brick", count = 1 } })
-					exports.ox_inventory:AddItem(char:GetData("SID"), "weed_bud", 200, {}, 1)
+					exports.ox_inventory:AddItem(source, "weed_bud", 200, {}, 1)
 				end
 			end)
 		else
@@ -132,7 +132,7 @@ function RegisterItems()
 				if success then
 					exports.ox_inventory:RemoveList(char:GetData("SID"), 1,
 						{ { name = "weed_baggy", count = 1 } })
-					exports.ox_inventory:AddItem(char:GetData("SID"), "weed_bud", 2, {}, 1)
+					exports.ox_inventory:AddItem(source, "weed_bud", 2, {}, 1)
 				end
 			end)
 		else
