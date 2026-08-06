@@ -1,51 +1,52 @@
+local Config = load(LoadResourceFile(GetCurrentResourceName(), "config/shared.lua"))()
+
 local harvesting = false
 
 RegisterNetEvent("Weed:Client:Login", function(l)
-	exports['pulsar-pedinteraction']:Add("weed-dealer", `s_m_y_dealer_01`, vector3(l.coords.x, l.coords.y, l.coords.z),
-		l.heading, 50.0, {
-			{
-				icon = "cannabis",
-				text = "Buy Package",
-				event = "Weed:Client:Package",
-			},
-			-- {
-			-- 	icon = "sack",
-			-- 	text = "Sell Bricks",
-			-- 	event = "Weed:Client:Brick",
-			-- 	item = "weed_brick",
-			-- 	rep = {
-			-- 		id = 'weed',
-			-- 		level = 3,
-			-- 	},
-			-- },
-			{
-				icon = "clock-nine",
-				text = "Sign In",
-				event = "WeedRun:Client:Enable",
-				data = {},
-				isEnabled = function()
-					return not hasValue(LocalPlayer.state.Character:GetData("States") or {}, "SCRIPT_WEED_RUN")
-						and LocalPlayer.state.onDuty ~= "police"
-				end,
-			},
-			{
-				icon = "clock-nine",
-				text = "Sign Out",
-				event = "WeedRun:Client:Disabled",
-				data = {},
-				isEnabled = function()
-					return hasValue(LocalPlayer.state.Character:GetData("States") or {}, "SCRIPT_WEED_RUN")
-						and LocalPlayer.state.onDuty ~= "police"
-				end,
-			},
-		}, "sack-dollar", "WORLD_HUMAN_DRUG_DEALER", true)
+	plsr.PedInteraction:Add("weed-dealer", `s_m_y_dealer_01`, vector3(l.coords.x, l.coords.y, l.coords.z), l.heading, 50.0, {
+		{
+			icon = "cannabis",
+			text = "Buy Package",
+			event = "Weed:Client:Package",
+		},
+		-- {
+		-- 	icon = "sack",
+		-- 	text = "Sell Bricks",
+		-- 	event = "Weed:Client:Brick",
+		-- 	item = "weed_brick",
+		-- 	rep = {
+		-- 		id = 'weed',
+		-- 		level = 3,
+		-- 	},
+		-- },
+		{
+			icon = "9",
+			text = "Sign In",
+			event = "WeedRun:Client:Enable",
+			data = {},
+			isEnabled = function()
+				return not hasValue(plsr.State.character.States or {}, "SCRIPT_WEED_RUN")
+					and plsr.State.flags.onDuty ~= "police"
+			end,
+		},
+		{
+			icon = "9",
+			text = "Sign Out",
+			event = "WeedRun:Client:Disabled",
+			data = {},
+			isEnabled = function()
+				return hasValue(plsr.State.character.States or {}, "SCRIPT_WEED_RUN")
+					and plsr.State.flags.onDuty ~= "police"
+			end,
+		},
+	}, "sack-dollar", "WORLD_HUMAN_DRUG_DEALER", true)
 end)
 
 AddEventHandler("Weed:Client:Check", function(entity, data)
-	exports["pulsar-core"]:ServerCallback("Weed:CheckPlant", GetWeedPlant(entity.entity), function(data)
+	plsr.Callbacks:ServerCallback("Weed:CheckPlant", GetWeedPlant(entity.entity), function(data)
 		if data ~= nil then
 			local stageId = getStageByPct(data.plant.growth)
-			local stage = Plants[stageId]
+			local stage = Config.Plants[stageId]
 
 			local type = "Female"
 			if data.plant.isMale then
@@ -119,14 +120,13 @@ AddEventHandler("Weed:Client:Check", function(entity, data)
 			local fertilizers = {
 				{
 					label = "About Fertilizer",
-					description =
-					"Various fertilizers do different things.<br />Nitrogen: Increases possible output of plant.<br />Phosphorus: Increases Growth Per Tick.<br />Potassium: Increases Water Duration.",
+					description = "Various fertilizers do different things.<br />Nitrogen: Increases possible output of plant.<br />Phosphorus: Increases Growth Per Tick.<br />Potassium: Increases Water Duration.",
 				},
 			}
 
-			local hasNitro = exports.ox_inventory:ItemsHas("fertilizer_nitrogen", 1)
-			local hasPhos = exports.ox_inventory:ItemsHas("fertilizer_phosphorus", 1)
-			local hasPotas = exports.ox_inventory:ItemsHas("fertilizer_potassium", 1)
+			local hasNitro = plsr.Inventory.Items:Has("fertilizer_nitrogen", 1)
+			local hasPhos = plsr.Inventory.Items:Has("fertilizer_phosphorus", 1)
+			local hasPotas = plsr.Inventory.Items:Has("fertilizer_potassium", 1)
 
 			if hasNitro or hasPhos or hasPotas then
 				if hasNitro then
@@ -167,7 +167,7 @@ AddEventHandler("Weed:Client:Check", function(entity, data)
 				submenu = "deleteConfirm",
 			})
 
-			exports['pulsar-hud']:ListMenuShow({
+			plsr.ListMenu:Show({
 				main = {
 					label = string.format("Weed Plant Stage: %s", stageId),
 					items = items,
@@ -181,8 +181,7 @@ AddEventHandler("Weed:Client:Check", function(entity, data)
 					items = {
 						{
 							label = "Are You Sure?",
-							description =
-							"Destroying this plant is irreversible and you will not receive anything from this plant. Are you absolutely sure you want to do this?",
+							description = "Destroying this plant is irreversible and you will not receive anything from this plant. Are you absolutely sure you want to do this?",
 						},
 						{
 							label = "Yes",
@@ -204,9 +203,9 @@ AddEventHandler("Weed:Client:Check", function(entity, data)
 end)
 
 AddEventHandler("Weed:Client:Fertilize", function(data)
-	if exports.ox_inventory:ItemsHas(string.format("fertilizer_%s", data.type), 1) then
-		exports['pulsar-hud']:ListMenuClose()
-		exports['pulsar-hud']:Progress({
+	if plsr.Inventory.Items:Has(string.format("fertilizer_%s", data.type), 1) then
+		plsr.ListMenu:Close()
+		plsr.Progress:Progress({
 			name = "fertilize_weed",
 			duration = 15000,
 			label = "Fertilizing",
@@ -224,18 +223,18 @@ AddEventHandler("Weed:Client:Fertilize", function(data)
 			},
 		}, function(cancelled)
 			if not cancelled then
-				exports["pulsar-core"]:ServerCallback("Weed:FertilizePlant", data, function(status) end)
+				plsr.Callbacks:ServerCallback("Weed:FertilizePlant", data, function(status) end)
 			end
 		end)
 	else
-		exports["pulsar-hud"]:Notification("error", "You Don't Have Fertilizer")
+		plsr.Notification:Error("You Don't Have Fertilizer")
 	end
 end)
 
 AddEventHandler("Weed:Client:Water", function(pId)
-	if exports.ox_inventory:ItemsHas("water", 1) then
-		exports['pulsar-hud']:ListMenuClose()
-		exports['pulsar-hud']:Progress({
+	if plsr.Inventory.Items:Has("water", 1) then
+		plsr.ListMenu:Close()
+		plsr.Progress:Progress({
 			name = "water_weed",
 			duration = 6000,
 			label = "Watering",
@@ -251,14 +250,14 @@ AddEventHandler("Weed:Client:Water", function(pId)
 			},
 		}, function(cancelled)
 			if not cancelled then
-				exports["pulsar-core"]:ServerCallback("Weed:WaterPlant", pId, function(status) end)
+				plsr.Callbacks:ServerCallback("Weed:WaterPlant", pId, function(status) end)
 			end
 		end)
 	end
 end)
 
 AddEventHandler("Weed:Client:Harvest", function(entity, data)
-	exports['pulsar-hud']:Progress({
+	plsr.Progress:Progress({
 		name = "harvest_weed",
 		duration = 6000,
 		label = "Harvesting",
@@ -276,14 +275,14 @@ AddEventHandler("Weed:Client:Harvest", function(entity, data)
 		},
 	}, function(cancelled)
 		if not cancelled then
-			exports["pulsar-core"]:ServerCallback("Weed:HarvestPlant", GetWeedPlant(entity.entity), function(status) end)
+			plsr.Callbacks:ServerCallback("Weed:HarvestPlant", GetWeedPlant(entity.entity), function(status) end)
 		end
 	end)
 end)
 
 AddEventHandler("Weed:Client:Harvest2", function(nId)
-	exports['pulsar-hud']:ListMenuClose()
-	exports['pulsar-hud']:Progress({
+	plsr.ListMenu:Close()
+	plsr.Progress:Progress({
 		name = "harvest_weed",
 		duration = 6000,
 		label = "Harvesting",
@@ -301,21 +300,21 @@ AddEventHandler("Weed:Client:Harvest2", function(nId)
 		},
 	}, function(cancelled)
 		if not cancelled then
-			exports["pulsar-core"]:ServerCallback("Weed:HarvestPlant", nId, function(status) end)
+			plsr.Callbacks:ServerCallback("Weed:HarvestPlant", nId, function(status) end)
 		end
 	end)
 end)
 
 AddEventHandler("Weed:Client:Package", function()
-	exports["pulsar-core"]:ServerCallback("Weed:BuyPackage", {}, function(status) end)
+	plsr.Callbacks:ServerCallback("Weed:BuyPackage", {}, function(status) end)
 end)
 
 -- AddEventHandler("Weed:Client:Brick", function()
--- 	exports["pulsar-core"]:ServerCallback("Weed:SellBrick", {}, function(status) end)
+-- 	plsr.Callbacks:ServerCallback("Weed:SellBrick", {}, function(status) end)
 -- end)
 
 AddEventHandler("Weed:Client:Destroy", function(nId)
-	exports['pulsar-hud']:Progress({
+	plsr.Progress:Progress({
 		name = "destroy_weed",
 		duration = 8000,
 		label = "Destroying",
@@ -333,38 +332,13 @@ AddEventHandler("Weed:Client:Destroy", function(nId)
 		},
 	}, function(cancelled)
 		if not cancelled then
-			exports["pulsar-core"]:ServerCallback("Weed:DestroyPlant", nId, function(status) end)
-		end
-	end)
-end)
-
-local _stonedVal    = 0
-local _stonedDecayId = 0
-
-RegisterNetEvent("Weed:Client:Stoned", function()
-	_stonedVal = math.min(_stonedVal + 7, 100)
-	exports['pulsar-hud']:ApplyBuff("stoned", _stonedVal)
-
-	_stonedDecayId = _stonedDecayId + 1
-	local myId = _stonedDecayId
-
-	CreateThread(function()
-		while _stonedVal > 0 and _stonedDecayId == myId do
-			Wait(90 * 1000)
-			if _stonedDecayId == myId then
-				_stonedVal = math.max(0, _stonedVal - 7)
-				if _stonedVal <= 0 then
-					exports['pulsar-hud']:RemoveBuff("stoned")
-				else
-					exports['pulsar-hud']:UpdateBuff("stoned", _stonedVal)
-				end
-			end
+			plsr.Callbacks:ServerCallback("Weed:DestroyPlant", nId, function(status) end)
 		end
 	end)
 end)
 
 AddEventHandler("Weed:Client:PDDestroy", function(entity)
-	exports['pulsar-hud']:Progress({
+	plsr.Progress:Progress({
 		name = "harvest_weed",
 		duration = 4000,
 		label = "Destroying",
@@ -382,8 +356,7 @@ AddEventHandler("Weed:Client:PDDestroy", function(entity)
 		},
 	}, function(cancelled)
 		if not cancelled then
-			exports["pulsar-core"]:ServerCallback("Weed:PDDestroyPlant", GetWeedPlant(entity.entity),
-				function(status) end)
+			plsr.Callbacks:ServerCallback("Weed:PDDestroyPlant", GetWeedPlant(entity.entity), function(status) end)
 		end
 	end)
 end)

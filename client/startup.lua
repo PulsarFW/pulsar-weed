@@ -1,12 +1,14 @@
+local Config = load(LoadResourceFile(GetCurrentResourceName(), "config/shared.lua"))()
+
 function RegisterTargets()
-	for k, v in ipairs(Plants) do
-		exports.ox_target:addModel(v.model, v.targeting)
+	for k, v in ipairs(Config.Plants) do
+		plsr.Targeting:AddObject(v.model, "cannabis", v.targeting, 3.0)
 	end
 end
 
 function LoadWeedModels()
 	CreateThread(function()
-		for k, v in ipairs(Plants) do
+		for k, v in ipairs(Config.Plants) do
 			LoadModel(v.model)
 		end
 	end)

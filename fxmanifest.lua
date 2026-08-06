@@ -1,22 +1,25 @@
-fx_version("cerulean")
-version '1.0.4'
-client_script("@pulsar-core/exports/cl_error.lua")
-client_script("@pulsar-pwnzor/client/check.lua")
+fx_version 'cerulean'
+game 'gta5'
 
-game("gta5")
-lua54("yes")
+name 'Pulsar Weed'
+description 'Weed growing'
+author 'Artmines - maintained for Pulsar Framework'
+url 'https://pulsarframe.work'
+version 'v1.0.0'
+
+version_check 'yes'
+github 'https://github.com/PulsarFW/pulsar_weed'
+
+client_script '@pulsar_core/components/cl_error.lua'
+shared_script '@pulsar_core/core/sh_pulsar.lua'
+client_script '@pulsar_pwnzor/client/check.lua'
 
 client_scripts({
-  "config/cl_*.lua",
-  "client/**/*.lua",
-})
-
-shared_scripts({
-  "config/sh_*.lua",
+	'client/**/*.lua',
 })
 
 server_scripts({
-  "@oxmysql/lib/MySQL.lua",
-  "config/sv_*.lua",
-  "server/**/*.lua",
+	'server/**/*.lua',
 })
+
+lua54 'yes'

@@ -1,25 +1,27 @@
+local Config = load(LoadResourceFile(GetCurrentResourceName(), "config/shared.lua"))()
+
 _activePlants, _nearbyPlants, _spawnedPlants = {}, {}, {}
 
 RegisterNetEvent('Weed:Client:Objects:Init', function(plants)
     if plants and type(plants) == 'table' then
-        for k, v in pairs(plants) do
+        for k,v in pairs(plants) do
             _activePlants[k] = v
         end
 
         _spawnedPlants = {}
         _nearbyPlants = {}
 
-        while not LocalPlayer.state.loggedIn do
+        while not plsr.State.flags.loggedIn do
             Wait(100)
         end
 
         CreateThread(function()
-            while LocalPlayer.state.loggedIn do
+            while plsr.State.flags.loggedIn do
                 Wait(3000)
 
                 if _activePlants then
-                    local pedCoords = GetEntityCoords(LocalPlayer.state.ped)
-                    for k, v in pairs(_activePlants) do
+                    local pedCoords = GetEntityCoords(PlayerPedId())
+                    for k,v in pairs(_activePlants) do
                         if #(pedCoords - vector3(v.plant.location.x, v.plant.location.y, v.plant.location.z)) <= 500.0 then
                             if not _nearbyPlants[k] then
                                 _nearbyPlants[k] = true
@@ -39,11 +41,11 @@ RegisterNetEvent('Weed:Client:Objects:Init', function(plants)
         end)
 
         CreateThread(function()
-            while LocalPlayer.state.loggedIn do
+            while plsr.State.flags.loggedIn do
                 Wait(350)
                 if _activePlants and _nearbyPlants then
-                    local pedCoords = GetEntityCoords(LocalPlayer.state.ped)
-                    for k, v in pairs(_nearbyPlants) do
+                    local pedCoords = GetEntityCoords(PlayerPedId())
+                    for k,v in pairs(_nearbyPlants) do
                         local weed = _activePlants[k]
                         if weed and #(pedCoords - vector3(weed.plant.location.x, weed.plant.location.y, weed.plant.location.z)) <= 50.0 then
                             if not _spawnedPlants[k] then
@@ -62,7 +64,7 @@ RegisterNetEvent('Weed:Client:Objects:Init', function(plants)
             end
         end)
     else
-        exports['pulsar-core']:LoggerError('Weed', 'Failed to Load Weed Objects')
+        plsr.Logger:Error('Weed', 'Failed to Load Weed Objects')
     end
 end)
 
@@ -78,7 +80,7 @@ end)
 RegisterNetEvent('Weed:Client:Objects:UpdateMany', function(data)
     for k, v in ipairs(data) do
         _activePlants[v.id] = v.plant
-
+    
         if v.update and _spawnedPlants[v.id] then
             DeleteEntity(_spawnedPlants[v.id])
             _spawnedPlants[v.id] = nil
@@ -102,11 +104,9 @@ end)
 function CreateWeedPlant(id, data)
     local stage = getStageByPct(data.plant.growth)
 
-    local obj = CreateObject(Plants[stage].model, data.plant.location.x + 0.0, data.plant.location.y + 0.0,
-        data.plant.location.z + Plants[stage].offset, false, true)
+    local obj = CreateObject(Config.Plants[stage].model, data.plant.location.x + 0.0, data.plant.location.y + 0.0, data.plant.location.z + Config.Plants[stage].offset, false, true)
     FreezeEntityPosition(obj, true)
-    SetEntityCoords(obj, data.plant.location.x + 0.0, data.plant.location.y + 0.0,
-        data.plant.location.z + Plants[stage].offset)
+    SetEntityCoords(obj, data.plant.location.x + 0.0, data.plant.location.y + 0.0, data.plant.location.z + Config.Plants[stage].offset)
 
     return obj
 end

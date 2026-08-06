@@ -1,13 +1,12 @@
-_weedDealer = Locations[tostring(os.date("%w"))]
+local ServerConfig = load(LoadResourceFile(GetCurrentResourceName(), "config/server.lua"))()
+
+_weedDealer = ServerConfig.Locations[tostring(os.date("%w"))]
 
 function RegisterMiddleware()
-	exports['pulsar-core']:MiddlewareAdd("Characters:Spawning", function(source)
+	plsr.Middleware:Add("Characters:Spawning", function(source)
 		TriggerClientEvent("Weed:Client:Login", source, _weedDealer)
 
 		TriggerLatentClientEvent("Weed:Client:Objects:Init", source, 10000, _plants)
 	end)
 end
 
-AddEventHandler("Characters:Server:PlayerLoggedOut", function(source)
-	Player(source).state.WeedZone = nil
-end)

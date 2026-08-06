@@ -1,3 +1,5 @@
+local ServerConfig = load(LoadResourceFile(GetCurrentResourceName(), "config/server.lua"))()
+
 local _started
 function Startup()
 	if _started then
@@ -5,33 +7,30 @@ function Startup()
 	end
 	_started = true
 
-	MySQL.query('SELECT * FROM weed', {}, function(results)
-		local count = 0
-		for k, v in ipairs(results) do
-			local plant = {
-				isMale = v.is_male == 1,
-				location = { x = v.x, y = v.y, z = v.z },
-				growth = v.growth,
-				output = v.output,
-				material = v.material,
-				planted = v.planted,
-				water = v.water,
-				fertilizer = v.fertilizer_type and
-					{ type = v.fertilizer_type, value = v.fertilizer_value, time = v.fertilizer_time } or nil,
-				_id = v.id
-			}
-			if os.time() - plant.planted <= Config.Lifetime then
-				_plants[plant._id] = {
-					plant = plant,
-					stage = getStageByPct(plant.growth),
-				}
-				count = count + 1
+	EnsureWeedTable(function()
+		plsr.Database:Query("SELECT `id`, `data` FROM `weed`", nil, function(success, results)
+			if not success then
+				return
 			end
-		end
-		exports['pulsar-core']:LoggerTrace("Weed", string.format("Loaded ^2%s^7 Weed Plants", count), { console = true })
+			local count = 0
+			for k, row in ipairs(results) do
+				local ok, v = pcall(json.decode, row.data)
+				if ok and type(v) == "table" then
+					v._id = row.id
+					if os.time() - v.planted <= ServerConfig.Lifetime then
+						_plants[v._id] = {
+							plant = v,
+							stage = getStageByPct(v.growth),
+						}
+						count = count + 1
+					end
+				end
+			end
+			plsr.Logger:Trace("Weed", string.format("Loaded ^2%s^7 Weed Plants", count), { console = true })
+		end)
 	end)
 
-	exports['pulsar-characters']:RepCreate("weed", "Weed", {
+	plsr.Reputation:Create("weed", "Weed", {
 		{ label = "Rank 1", value = 3000 },
 		{ label = "Rank 2", value = 6000 },
 		{ label = "Rank 3", value = 12000 },

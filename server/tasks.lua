@@ -1,7 +1,9 @@
+local Config = load(LoadResourceFile(GetCurrentResourceName(), "config/shared.lua"))()
+local ServerConfig = load(LoadResourceFile(GetCurrentResourceName(), "config/server.lua"))()
+
 local _run = false
 
-
-AddEventHandler("Core:Server:ForceSave", function()
+function SaveAllPlants()
 	local docs = {}
 	for k, v in pairs(_plants) do
 		if v and v.plant then
@@ -9,79 +11,48 @@ AddEventHandler("Core:Server:ForceSave", function()
 		end
 	end
 	if #docs > 0 then
-		exports['pulsar-core']:LoggerInfo("Weed", string.format("Saving ^2%s^7 Plants", #docs))
-		local queries = {}
-		for _, plant in ipairs(docs) do
-			table.insert(queries, {
-				query =
-				'INSERT INTO weed (id, is_male, x, y, z, growth, output, material, planted, water, fertilizer_type, fertilizer_value, fertilizer_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE is_male=VALUES(is_male), x=VALUES(x), y=VALUES(y), z=VALUES(z), growth=VALUES(growth), output=VALUES(output), material=VALUES(material), planted=VALUES(planted), water=VALUES(water), fertilizer_type=VALUES(fertilizer_type), fertilizer_value=VALUES(fertilizer_value), fertilizer_time=VALUES(fertilizer_time)',
-				values = {
-					plant._id,
-					plant.isMale and 1 or 0,
-					plant.location.x, plant.location.y, plant.location.z,
-					plant.growth, plant.output, plant.material, plant.planted, plant.water,
-					plant.fertilizer and plant.fertilizer.type or nil,
-					plant.fertilizer and plant.fertilizer.value or nil,
-					plant.fertilizer and plant.fertilizer.time or nil
-				}
-			})
-		end
-		MySQL.transaction(queries)
+		plsr.Logger:Info("Weed", string.format("Saving ^2%s^7 Plants", #docs))
+		EnsureWeedTable(function()
+			local queries = { { query = "DELETE FROM `weed`", values = {} } }
+			for k, doc in ipairs(docs) do
+				table.insert(queries, {
+					query = "INSERT INTO `weed` (`id`, `data`) VALUES (?, ?)",
+					values = { doc._id, json.encode(doc) },
+				})
+			end
+			plsr.Database:Transaction(queries)
+		end)
 	end
-end)
+end
+
+AddEventHandler("Core:Server:ForceSave", SaveAllPlants)
 
 function RegisterTasks()
 	if _run then return end
 	_run = true
-
+	
 	CreateThread(function()
 		while true do
 			Wait((1000 * 60) * 10)
-			local docs = {}
-			for k, v in pairs(_plants) do
-				if v and v.plant then
-					table.insert(docs, v.plant)
-				end
-			end
-			if #docs > 0 then
-				exports['pulsar-core']:LoggerInfo("Weed", string.format("Saving ^2%s^7 Plants", #docs))
-				local queries = {}
-				for _, plant in ipairs(docs) do
-					table.insert(queries, {
-						query =
-						'INSERT INTO weed (id, is_male, x, y, z, growth, output, material, planted, water, fertilizer_type, fertilizer_value, fertilizer_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE is_male=VALUES(is_male), x=VALUES(x), y=VALUES(y), z=VALUES(z), growth=VALUES(growth), output=VALUES(output), material=VALUES(material), planted=VALUES(planted), water=VALUES(water), fertilizer_type=VALUES(fertilizer_type), fertilizer_value=VALUES(fertilizer_value), fertilizer_time=VALUES(fertilizer_time)',
-						values = {
-							plant._id,
-							plant.isMale and 1 or 0,
-							plant.location.x, plant.location.y, plant.location.z,
-							plant.growth, plant.output, plant.material, plant.planted, plant.water,
-							plant.fertilizer and plant.fertilizer.type or nil,
-							plant.fertilizer and plant.fertilizer.value or nil,
-							plant.fertilizer and plant.fertilizer.time or nil
-						}
-					})
-				end
-				MySQL.transaction(queries)
-			end
+			SaveAllPlants()
 		end
 	end)
-
+	
 	CreateThread(function()
 		while true do
 			Wait((1000 * 60) * 10)
-			exports['pulsar-core']:LoggerTrace("Weed", "Growing Plants")
+			plsr.Logger:Trace("Weed", "Growing Plants")
 			local updatingStuff = {}
 
 			for k, v in pairs(_plants) do
-				if (os.time() - v.plant.planted) >= Config.Lifetime then
-					exports['pulsar-core']:LoggerTrace("Weed",
-						"Deleting Weed Plant Because Some Dumb Cunt Didn't Harvest It")
-					exports['pulsar-weed']:PlantingDelete(k)
+				if (os.time() - v.plant.planted) >= ServerConfig.Lifetime then
+					plsr.Logger:Trace("Weed", "Deleting Weed Plant Because Some Dumb Cunt Didn't Harvest It")
+					plsr.Weed.Planting:Delete(k)
 				else
 					if v.plant.growth < 100 then
-						local mat = Materials[v.plant.material]
+						local mat = Config.Materials[v.plant.material]
 						if mat ~= nil then
-							local gt = GroundTypes[mat.groundType]
+							local gt = ServerConfig.GroundTypes[mat.groundType]
 							if gt ~= nil then
 								local phosphorus = gt.phosphorus
 								if v.plant.fertilizer ~= nil and v.plant.fertilizer.type == "phosphorus" then
@@ -89,16 +60,16 @@ function RegisterTasks()
 								end
 								v.plant.growth = v.plant.growth + (1 + phosphorus)
 								if v.stage ~= getStageByPct(v.plant.growth) then
-									local res = exports['pulsar-weed']:PlantingSet(k, true, true)
+									local res = plsr.Weed.Planting:Set(k, true, true)
 									if res then
 										table.insert(updatingStuff, res)
 									end
 								end
 							else
-								exports['pulsar-weed']:PlantingDelete(k)
+								plsr.Weed.Planting:Delete(k)
 							end
 						else
-							exports['pulsar-weed']:PlantingDelete(k)
+							plsr.Weed.Planting:Delete(k)
 						end
 					end
 				end
@@ -109,16 +80,16 @@ function RegisterTasks()
 			end
 		end
 	end)
-
+	
 	CreateThread(function()
 		while true do
 			Wait((1000 * 60) * 20)
-			exports['pulsar-core']:LoggerTrace("Weed", "Increasing Plant Outputs")
+			plsr.Logger:Trace("Weed", "Increasing Plant Outputs")
 			for k, v in pairs(_plants) do
 				if v.plant.growth < 100 then
-					local mat = Materials[v.plant.material]
+					local mat = Config.Materials[v.plant.material]
 					if mat ~= nil then
-						local gt = GroundTypes[mat.groundType]
+						local gt = ServerConfig.GroundTypes[mat.groundType]
 						if gt ~= nil then
 							local nitrogen = gt.nitrogen
 							if v.plant.fertilizer ~= nil and v.plant.fertilizer.type == "nitrogen" then
@@ -131,42 +102,41 @@ function RegisterTasks()
 			end
 		end
 	end)
-
+	
 	CreateThread(function()
 		while true do
 			Wait((1000 * 60) * 10)
-			exports['pulsar-core']:LoggerTrace("Weed", "Degrading Water")
+			plsr.Logger:Trace("Weed", "Degrading Water")
 			for k, v in pairs(_plants) do
 				if v.plant.water > -25 then
-					local mat = Materials[v.plant.material]
+					local mat = Config.Materials[v.plant.material]
 					if mat ~= nil then
-						local gt = GroundTypes[mat.groundType]
+						local gt = ServerConfig.GroundTypes[mat.groundType]
 						if gt ~= nil then
 							local potassium = gt.potassium
 							if v.plant.fertilizer ~= nil and v.plant.fertilizer.type == "potassium" then
 								potassium = potassium + v.plant.fertilizer.value
 							end
-
+	
 							v.plant.water = v.plant.water - ((1.0 * (1.0 + (1.0 - potassium))) - gt.water)
 						else
-							exports['pulsar-weed']:PlantingDelete(k)
+							plsr.Weed.Planting:Delete(k)
 						end
 					else
-						exports['pulsar-weed']:PlantingDelete(k)
+						plsr.Weed.Planting:Delete(k)
 					end
 				else
-					exports['pulsar-core']:LoggerTrace("Weed",
-						"Deleting Weed Plant Because Some Dumb Cunt Didn't Water It")
-					exports['pulsar-weed']:PlantingDelete(k)
+					plsr.Logger:Trace("Weed", "Deleting Weed Plant Because Some Dumb Cunt Didn't Water It")
+					plsr.Weed.Planting:Delete(k)
 				end
 			end
 		end
 	end)
-
+	
 	CreateThread(function()
 		while true do
 			Wait((1000 * 60) * 1)
-			exports['pulsar-core']:LoggerTrace("Weed", "Ticking Down Fertilizer")
+			plsr.Logger:Trace("Weed", "Ticking Down Fertilizer")
 			for k, v in pairs(_plants) do
 				if v.plant.fertilizer ~= nil then
 					if v.plant.fertilizer.time > 0 then

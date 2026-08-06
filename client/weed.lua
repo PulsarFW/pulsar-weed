@@ -1,38 +1,41 @@
-AddEventHandler('onClientResourceStart', function(resource)
-	if resource == GetCurrentResourceName() then
-		Wait(1000)
-		RegisterTargets()
-		RegisterCallbacks()
+local Config = load(LoadResourceFile(GetCurrentResourceName(), "config/shared.lua"))()
 
-		LoadWeedModels()
+CreateThread(function()
+	RegisterTargets()
+	RegisterCallbacks()
 
-		exports['pulsar-polyzone']:CreatePoly("casino_roof_weed_blocker", {
-			vector2(909.12774658203, 68.336456298828),
-			vector2(892.63311767578, 34.766555786133),
-			vector2(904.96075439453, 22.200096130371),
-			vector2(894.90655517578, 1.1801514625549),
-			vector2(922.87658691406, -17.753396987915),
-			vector2(932.50738525391, -8.3494606018066),
-			vector2(958.59307861328, -23.690893173218),
-			vector2(1018.4107055664, 62.70947265625),
-			vector2(984.884765625, 89.045021057129),
-			vector2(970.19580078125, 90.825546264648),
-			vector2(948.73913574219, 85.602745056152)
-		}, {
-			minZ = 105.0,
-			maxZ = 145.0
-		}, {})
-	end
+	LoadWeedModels()
+
+	plsr.Polyzone.Create:Poly("casino_roof_weed_blocker", {
+		vector2(909.12774658203, 68.336456298828),
+		vector2(892.63311767578, 34.766555786133),
+		vector2(904.96075439453, 22.200096130371),
+		vector2(894.90655517578, 1.1801514625549),
+		vector2(922.87658691406, -17.753396987915),
+		vector2(932.50738525391, -8.3494606018066),
+		vector2(958.59307861328, -23.690893173218),
+		vector2(1018.4107055664, 62.70947265625),
+		vector2(984.884765625, 89.045021057129),
+		vector2(970.19580078125, 90.825546264648),
+		vector2(948.73913574219, 85.602745056152)
+	}, {
+		minZ = 105.0,
+		maxZ = 145.0
+	}, {})
+end)
+
+AddEventHandler("Proxy:Shared:RegisterReady", function()
+	exports["pulsar_core"]:RegisterComponent("Weed", WEED)
 end)
 
 function getStageByPct(pct)
-	local stagePct = 100 / (#Plants - 1)
+	local stagePct = 100 / (#Config.Plants - 1)
 	return math.floor((pct / stagePct) + 1.5)
 end
 
 local _plants = {}
 function RegisterCallbacks()
-	exports["pulsar-core"]:RegisterClientCallback("Weed:PlantingAnim", function(data, cb)
+	plsr.Callbacks:RegisterClientCallback("Weed:PlantingAnim", function(data, cb)
 		local x, y, z = table.unpack(GetOffsetFromEntityInWorldCoords(PlayerPedId(), 0.0, 0.3, 0))
 		local foundGround, zPos = GetGroundZFor_3dCoord(x, y, z - 0.5, 0)
 		if foundGround then
@@ -42,17 +45,17 @@ function RegisterCallbacks()
 		local rayHandle = StartExpensiveSynchronousShapeTestLosProbe(x, y, z + 4, x, y, z - 2, 1, 0, 4)
 		local retval, hit, endCoords, _, materialHash, _ = GetShapeTestResultIncludingMaterial(rayHandle)
 
-		local plantPlaced = false
-		for k, v in pairs(_activePlants) do
+		local fuck = false
+		for k,v in pairs(_activePlants) do
 			if v and v.plant and #(vector3(x, y, z) - vector3(v.plant.location.x, v.plant.location.y, v.plant.location.z)) <= 0.8 then
-				plantPlaced = true
+				fuck = true
 			end
 		end
 
 		if hit then
-			if Materials[materialHash] ~= nil and not exports['pulsar-polyzone']:IsCoordsInZone(vector3(x, y, z), "cayo_perico") and not exports['pulsar-polyzone']:IsCoordsInZone(vector3(x, y, z), "casino_roof_weed_blocker") then
-				if not plantPlaced then
-					exports['pulsar-hud']:Progress({
+			if Config.Materials[materialHash] ~= nil and not plsr.Polyzone:IsCoordsInZone(vector3(x, y, z), "cayo_perico") and not plsr.Polyzone:IsCoordsInZone(vector3(x, y, z), "casino_roof_weed_blocker") then
+				if not fuck then
+					plsr.Progress:Progress({
 						name = "plant_weed",
 						duration = 15000,
 						label = "Planting",
@@ -87,8 +90,8 @@ function RegisterCallbacks()
 		end
 	end)
 
-	exports["pulsar-core"]:RegisterClientCallback("Weed:RollingAnim", function(data, cb)
-		exports['pulsar-hud']:Progress({
+	plsr.Callbacks:RegisterClientCallback("Weed:RollingAnim", function(data, cb)
+		plsr.Progress:Progress({
 			name = "rolling_weed",
 			duration = 3000,
 			label = "Rolling Joints",
@@ -110,8 +113,8 @@ function RegisterCallbacks()
 		end)
 	end)
 
-	exports["pulsar-core"]:RegisterClientCallback("Weed:MakingBrick", function(data, cb)
-		exports['pulsar-hud']:Progress({
+	plsr.Callbacks:RegisterClientCallback("Weed:MakingBrick", function(data, cb)
+		plsr.Progress:Progress({
 			name = "making_brick",
 			duration = data.time * 1000,
 			label = data.label,
@@ -133,9 +136,9 @@ function RegisterCallbacks()
 		end)
 	end)
 
-	exports["pulsar-core"]:RegisterClientCallback("Weed:SmokingAnim", function(data, cb)
+	plsr.Callbacks:RegisterClientCallback("Weed:SmokingAnim", function(data, cb)
 		local ticks = 1
-		exports['pulsar-hud']:ProgressWithTickEvent({
+		plsr.Progress:ProgressWithTickEvent({
 			name = "smoking_weed",
 			duration = 8000,
 			tickrate = 1000,
@@ -151,10 +154,10 @@ function RegisterCallbacks()
 			animation = {
 				anim = "smoke_weed"
 			}
-		}, function()
-			local armor = GetPedArmour(LocalPlayer.state.ped)
+    }, function()
+			local armor = GetPedArmour(PlayerPedId())
 			if armor < 50 then
-				SetPedArmour(LocalPlayer.state.ped, armor + 3)
+				SetPedArmour(PlayerPedId(), armor + 3)
 			end
 			ticks = ticks + 1
 		end, function(cancelled)
@@ -162,3 +165,5 @@ function RegisterCallbacks()
 		end)
 	end)
 end
+
+WEED = {}
